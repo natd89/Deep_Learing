@@ -1,0 +1,66 @@
+
+#!/usr/bin/env python
+
+import tensorflow as tf
+import numpy as np
+import os
+from skimage import data, io, filters, transform
+import random
+from pdb import set_trace as brake
+
+n = 300
+
+neg_test = os.listdir('/home/nmd89/Downloads/cancer_data/inputs/neg_test')
+pos_test = os.listdir('/home/nmd89/Downloads/cancer_data/inputs/pos_test')
+neg_train = os.listdir('/home/nmd89/Downloads/cancer_data/inputs/neg_train')
+pos_train = os.listdir('/home/nmd89/Downloads/cancer_data/inputs/pos_train')
+
+neg_test_lab = os.listdir('/home/nmd89/Downloads/cancer_data/outputs/neg_test')
+pos_test_lab = os.listdir('/home/nmd89/Downloads/cancer_data/outputs/pos_tesxt')
+neg_train_lab = os.listdir('/home/nmd89/Downloads/cancer_data/outputs/neg_train')
+pos_train_lab = os.listdir('/home/nmd89/Downloads/cancer_data/outputs/pos_train')
+
+# select n random images to train with
+index = random.sample(range(671), 300)
+
+# load the training data into a tensor
+im_size = 512
+image_train = np.zeros((2*n, im_size, im_size, 3)).astype(np.float32)
+image_train_lab = np.zeros((2*n, im_size, im_size, 1)).astype(np.float32)
+
+for i in range(n):
+    im_neg_tr = io.imread('/home/nmd89/Downloads/cancer_data/inputs/neg_train/'+neg_train[index[i]])
+    im_pos_tr = io.imread('/home/nmd89/Downloads/cancer_data/inputs/pos_train/'+pos_train[index[i]])
+    im_neg_lab= io.imread('/home/nmd89/Downloads/cancer_data/outputs/neg_train/'+neg_train_lab[index[i]])
+    im_pos_lab= io.imread('/home/nmd89/Downloads/cancer_data/outputs/pos_train/'+pos_train_lab[index[i]])    
+    print i
+    
+    image_train[2*i, :, :, :] = transform.resize(im_neg_tr, (im_size, im_size, 3))
+    image_train[2*i +1, :, :, :] = transform.resize(im_pos_tr, (im_size, im_size, 3))
+    image_train_lab[2*i, :, :, :] = transform.resize(im_neg_lab, (im_size, im_size, 1))
+    image_train_lab[2*i +1, :, :, :] = transform.resize(im_pos_lab, (im_size, im_size, 1))
+    
+# whiten the data
+image_train = (image_train - np.mean(image_train,0))/(np.std(image_train,0))
+
+image_test = np.zeros((len(neg_test)+len(pos_test),im_size, im_size, 3)).astype(np.float32)
+image_test_lab = np.zeros((len(neg_test)+len(pos_test),im_size, im_size, 1)).astype(np.float32)
+
+# load the test data into a tensor
+for i in range(len(neg_test)):
+    if i < 75:
+        im_neg_tst = io.imread('/home/nmd89/Downloads/cancer_data/inputs/neg_test/'+neg_test[i])
+        im_pos_tst = io.imread('/home/nmd89/Downloads/cancer_data/inputs/pos_test/'+pos_test[i])
+        im_neg_tst_lab = io.imread('/home/nmd89/Downloads/cancer_data/outputs/neg_test/'+neg_test_lab[i])
+        im_pos_tst_lab = io.imread('/home/nmd89/Downloads/cancer_data/outputs/pos_test/'+pos_test_lab[i])
+        image_test[2*i,:,:,:] = transform.resize(im_neg_tst, (im_size, im_size, 3))
+        image_test[2*i+1,:,:,:] = transform.resize(im_pos_tst, (im_size, im_size, 3))
+        image_test_lab[2*i,:,:,:] = transform.resize(im_neg_tst_lab, (im_size, im_size, 1))
+        image_test_lab[2*i+1,:,:,:] = transform.resize(im_pos_tst_lab, (im_size, im_size, 1))
+        print i
+    else:
+        im_neg_tst = io.imread('/home/nmd89/Downloads/cancer_data/inputs/neg_test/'+neg_test[i])
+        im_neg_tst_lab = io.imread('/home/nmd89/Downloads/cancer_data/outputs/neg_test/'+neg_test_lab[i])
+        image_test[i+75,:,:,:] = transform.resize(im_neg_tst, (im_size, im_size, 3))
+        image_test_lab[i+75,:,:,:] = transform.resize(im_neg_tst_lab, (im_size, im_size, 1))
+        print i
